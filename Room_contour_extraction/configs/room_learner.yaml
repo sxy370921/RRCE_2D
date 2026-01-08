@@ -1,0 +1,23 @@
+model: 'sbd'
+network: 'ro_34'
+task: 'snake'
+resume: true
+gpus: (0, 1, 2)
+train:
+    optim: 'adam'
+    lr: 1e-4
+    milestones: (80, 120, 150, 170)
+    gamma: 0.5
+    batch_size: 30
+    dataset: 'roomTrain'
+    num_workers: 32
+    epoch: 900
+test:
+    dataset: 'roomVal'
+    batch_size: 1
+    epoch: 899
+heads: {'ct_hm': 1, 'wh': 2}
+segm_or_bbox: 'segm'
+
+
+result_dir: 'data/result'
