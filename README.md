@@ -89,11 +89,17 @@ conda activate generation
 
 ### 1.3 Map Generation Results
 
-Fig. 1 illustrates the visual style of real-world maps and the main sources of noise. Our map generation method aims to reproduce, as faithfully as possible, the diverse geometric noise patterns, mapping noise, object layouts, and mapping (SLAM)-induced artifacts observed in real maps. The resulting simulated maps are shown in Fig. 2, from which it can be seen that our generated maps closely match the style of real-world maps. Fig. 4 provides a comparison between our simulated maps and real maps in terms of overall appearance and structural details, while Fig. 3 presents a comparison with a focus on global noise characteristics.
+**The generation pipeline of simulated maps：**Our home map generation framework consists of four tightly coupled components. First, we use selected HouseExpo floor plans as wall-structure templates, forming the basic geometric backbone of the simulated home environments. Second, on top of this backbone, we introduce a household obstacle simulation method. Third, based on an analysis of noise sources and geometric patterns in real home maps, we construct a multi-source noise model. Finally, we train a reinforcement-learning-based exploration controller, which not only completes the conversion from environment-level representations to occupancy grid maps, but also naturally generates mapping traces consistent with real-world mapping processes.
+
+Fig. 1 illustrates the visual style of real-world maps and the main sources of noise. Our map generation method aims to reproduce, as faithfully as possible, the diverse geometric noise patterns, mapping noise, object layouts, and mapping (SLAM)-induced artifacts observed in real maps. The resulting simulated maps are shown in Fig. 2, from which it can be seen that our generated maps closely match the style of real-world maps. Fig. 4 provides a comparison between our simulated maps and real maps in terms of overall appearance and structural details, while Fig. 3 presents a comparison in terms of global noise characteristics. 
+
+We quantitatively compare three types of simulated maps against real home maps, and then complement the analysis with a small-scale blind user study and visual examples in Fig.4. Six objective indicators capture four aspects of similarity between simulated maps and real home 2D SLAM maps: map morphology, exploration traces, noise style, and outlier occupancy blocks. Table 1 summarizes the mean values of all six indicators for the four map types, as well as the realism scores from the blind user study described below.
+
+Overall, the six objective indicators, the blind user study, and the visual examples in Fig.4 consistently show that our simulation method produces maps whose morphology, exploration traces, and noise characteristics are closest to those of real home 2D SLAM occupancy grids among all compared simulated maps.
 
 <img src="./pic/M1.png" style="zoom: 25%;"  />
 
-​                                                  Fig. 1. Representative noise patterns observed in real occupancy grid maps.
+​                                                                      Fig. 1. Representative noise patterns observed in real occupancy grid maps.
 
 <img src="./pic/noisy_map_show_v2_400.png" style="zoom: 20%;"   />
 
@@ -106,6 +112,10 @@ Fig. 1 illustrates the visual style of real-world maps and the main sources of n
 ![](./pic/maph.png)
 
 Fig.4. Visual comparison of real and simulated maps. (a) Comparison of raw simulated maps. All maps are configured with a resolution of 0.05 $m/pixel$ and normalized by aligning their centers and sizes to ensure consistency across comparisons. (b) Comparison of zoomed detail views in different maps.
+
+<img src="./pic/table.PNG" style="zoom: 80%;" />
+
+Table 1. Objective and subjective comparison between real maps and simulated maps. Values are means over maps per type. For $S_d$, $r_{\mathrm{frontier}}$ and $\rho_{\mathrm{ray}}$ are computed after removing salt-and-pepper noise to avoid trivial contamination by artificially injected pepper noise, while $d_{\mathrm{outlier}}$ is computed with pepper noise retained.
 
 ## 2 Floor Plan Annotation
 
@@ -125,13 +135,21 @@ Fig.4. Visual comparison of real and simulated maps. (a) Comparison of raw simul
 
 To streamline deployment and facilitate rapid demonstration, we provide three  three floor plans for users to label room basic boundaries.
 
-The operational workflow of our labeling software is demonstrated in the video tutorial located at `Floor_plan_annotation/Annotation_Demo_video.mp4`.
-
 ```bash
 cd Floor_plan_annotation
 conda activate annotation
 python room_annotion_v4.py
 ```
+
+### 2.3 Annotation illustration
+
+The method consists of two stages, as shown in Fig. 5. First, in the “basic boundary generation” stage, annotators click a small number of geometric corner points for each room on the floor plan, after which an automatic alignment and adaptive sampling procedure produces pixel-dense basic room boundaries $C_{fp}$ that tightly adhere to the walls. Second, in the “room contour inference” stage, for each simulated occupancy grid map derived from the same floor plan, the algorithm combines the basic boundaries with obstacle layouts, map noise, and mapping traces to automatically infer the room contours $C_{ro}$ on the grid maps. As a result, the manual cost grows only with the number of floor plans rather than the total number of grid maps, and the pixel-level geometric inference on grid maps avoids the instability of manually tracing dense contours on complex maps.
+
+<img src="./pic/ddd.PNG" style="zoom:50%;" />
+
+​                                       Fig. 5. The diagram of semi-automatic annotation approach.
+
+**The operational workflow of our labeling software is demonstrated in the video tutorial located at `Floor_plan_annotation/Annotation_Demo_video.mp4`.**
 
 ## 3 Room Contour Extraction
 
@@ -192,6 +210,17 @@ python run_sxy.py --type prediction --cfg_file configs/room_learner.yaml demo_pa
 
 ### 3.3 Room-Region Extraction Examples on Real 2D Occupancy Grid Maps
 
+To abstract salient room features using sufficient map data, a learning model closely adapted to the structural features of grid maps and the representation of room contours is essential. Therefore, we introduce the Deep Snake model  to understand map structures, extract universally effective room features, and predict dense points along room contours. Unlike conventional segmentation models that process all interior pixels, Deep Snake directly regresses area boundaries. This paradigm aligns with the core objective of room contour extraction: to encapsulate all obstacle areas and free areas within the target room while ensuring strict boundary definition. We follow the overall network architecture and adapt it to room contour extraction on home occupancy grid maps by introducing customized input preprocessing and data augmentation strategies tailored to grid-map characteristics.
+
+To evaluate how well each method recovers room regions on different grid types, we report accuracy and recall under two complementary objectives. First, we evaluate room free-space regions (free grids only), where both ground-truth and predicted regions are taken as the free cells inside each room (the colored shaded areas in Fig. 6, corresponding to the conventional room-segmentation performance. Second, we evaluate complete room regions that include free, occupied and unknown grids belonging to each room (the areas enclosed by the darker-colored curves in Fig. 6, which measures performance under a unified, more complete room semantic definition that is relevant to a broader range of room-related robotic applications.Quantitative performance comparisons are presented in Fig. 6, while Fig. 7  provides visualizations of extraction results across 10 representative real-world home maps.
+
+The superior performance of our method across diverse real-world home maps unseen during training indicates that the network successfully learns effective structural features of rooms from our simulated maps—features that are more robust and generalizable compared to those relied upon by other state-of-the-art methods.
+
 ![](./pic/contour.png)
 
-Fig.5. Visualization of extracted rooms from real-world home maps using different methods. The colored shadings in the maps represent the extracted (i.e., predicted) free areas within rooms, while the darker-colored curves indicate the extracted contours of complete rooms that are expected to encompass both free and obstacle areas. The correctly extracted rooms (denoted as correct rooms) and the maps with perfect room extractions (denoted as correct maps) are marked with symbols. A map with perfect room extractions is defined as one in which all rooms are correctly extracted without false positives. Other cases are considered maps with imperfect room extractions. The total number of extracted rooms, the number of correct rooms, and the number of correct maps for each method are summarized in the figure. 
+Fig. 6. Visualization of extracted rooms from real-world home maps using different methods. The colored shadings in the maps represent the extracted (i.e., predicted) free areas within rooms, while the darker-colored curves indicate the extracted contours of complete rooms that are expected to encompass both free and obstacle areas. The correctly extracted rooms (denoted as correct rooms) and the maps with perfect room extractions (denoted as correct maps) are marked with symbols. A map with perfect room extractions is defined as one in which all rooms are correctly extracted without false positives. Other cases are considered maps with imperfect room extractions. The total number of extracted rooms, the number of correct rooms, and the number of correct maps for each method are summarized in the figure. 
+
+<img src="./pic/data.PNG" style="zoom: 50%;" />
+
+Fig. 7. Evaluation results of rooms extracted by different methods in 100 test real-world maps. (a) Metric statistics for the free areas within rooms. (b) Metric statistics for the complete room areas.
+
