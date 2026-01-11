@@ -149,9 +149,9 @@ The method consists of two stages, as shown in Fig. 5. First, in the “basic bo
 
 ​                                       Fig. 5. The diagram of semi-automatic annotation approach.
 
-**The operational workflow of our labeling software is demonstrated in the video tutorial located at `Floor_plan_annotation/Annotation_Demo_video.mp4`.**
+**The operational workflow of our labeling software is demonstrated in the video tutorial located at `./Floor_plan_annotation/Annotation_Demo_video.mp4`.**
 
-[查看视频](./Floor_plan_annotation/Annotation_Demo_video.mp4)
+
 
 ## 3 Room Contour Extraction
 
