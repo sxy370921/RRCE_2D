@@ -151,6 +151,8 @@ The method consists of two stages, as shown in Fig. 5. First, in the “basic bo
 
 **The operational workflow of our labeling software is demonstrated in the video tutorial located at `Floor_plan_annotation/Annotation_Demo_video.mp4`.**
 
+[查看视频](./Floor_plan_annotation/Annotation_Demo_video.mp4)
+
 ## 3 Room Contour Extraction
 
 ### 3.1 Prerequisite&Installation
